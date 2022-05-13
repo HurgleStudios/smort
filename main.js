@@ -1,60 +1,10 @@
 var EMOJILIST = [
-    '🙂',
-    '🤢',
-    '🥶',
-    '😈',
-    '💀',
-    '👽',
-    '🤖',
-    '😻',
-    '🐵',
-    '🐷',
-    '🐹',
-    '🐸',
-    '🤡',
-    '💩',
-    '🐶',
-    '🐼',
-    '🐞',
-    '🐨',
-    '🐰',
-    '🐮',
-    '👻',
-    '💘',
-    '💣',
-    '🧠',
-    '🦷',
-    '🐯',
-    '🦒',
-    '🦥',
-    '🐧',
-    '🐙',
-    '🦠',
-    '🌸',
-    '🌵',
-    '🍁',
-    '🍎',
-    '🥔',
-    '🍄',
-    '🥨',
-    '🥩',
-    '🦀',
-    '🍩',
-    '🌎',
-    '🌕',
-    '🌈',
-    '🔥',
-    '💧',
-    '🎃',
-    '🧨',
-    '⚾',
-    '🏀',
-    '⚽',
-    '🎱',
-    '🎲',
-    '🎨',
-    '💡',
-    '🧽',
+    '🙂', '🤢', '🥶', '😈', '💀', '👽', '🤖', '😻', '🐵', '🐷',
+    '🐹', '🐸', '🤡', '💩', '🐶', '🐼', '🐞', '🐨', '🐰', '🐮',
+    '👻', '💘', '💣', '🧠', '🦷', '🐯', '🦒', '🦥', '🐧', '🐙',
+    '🦠', '🌸', '🌵', '🍁', '🍎', '🥔', '🍄', '🥨', '🥩', '🦀',
+    '🍩', '🌎', '🌕', '🌈', '🔥', '💧', '🎃', '🧨', '⚾', '🏀',
+    '⚽', '🎱', '🎲', '🎨', '💡', '🧽',
 ];
 
 // Initialize the canvas
@@ -74,13 +24,16 @@ var newGameWidth = 0;
 var newGameHeight = 0;
 var dscale = 1920 / 1080;
 var bgcolor = '#333333';
+var modalUp = false;
 
 var bottles = [];
 var bottleImg = new Image(); // Create new img element
 
 var screenOrientation = 0; // 0 Horiz, 1 Vert
-var maxSlots = 3;
-var currentBottle = null;
+var maxSlots = 4;
+var maxColors = 10;
+var doHide = false;
+var curBall = null;
 var undoList = [];
 
 window.onload = function() {
@@ -88,16 +41,56 @@ window.onload = function() {
     window.addEventListener('click', handleMouse);
     window.addEventListener('keydown', handleKeys);
     bottleImg.addEventListener('load', function() {
-        initGame();
+        let save = window.localStorage.getItem('SmortSave');
+        if (save == null) {
+            initGame(5, 3);
+            resizeGame();
+            drawScreen();
+        } else {
+            loadGame(save);
+            resizeGame();
+            drawScreen();
+        }
     }, false);
     bottleImg.src = 'bottle.png'; // Set source path
 };
 
-function initGame(numColors = 22, numSlots = 5) {
+function saveGame() {
+    let sg = {
+        'maxColors': maxColors,
+        'maxSlots': maxSlots,
+        'doHide': doHide,
+        'bottles': bottles,
+        'list': EMOJILIST,
+    }
+    window.localStorage.setItem('SmortSave', JSON.stringify(sg));
+}
+
+function loadGame(sg) {
+    let save = JSON.parse(sg);
+    maxColors = save['maxColors'];
+    maxSlots = save['maxSlots'];
+    doHide = save['doHide'];
+    bottles = save['bottles'];
+    EMOJILIST = save['list'];
+}
+
+function initGame() {
     bgcolor = getRandomRgb(0, 64);
     shuffle(EMOJILIST);
+    while (undoList.length > 0) {
+        undoList.pop();
+    }
+    if (bottles.length > 0) {
+        for (let i = 0; i < bottles.length; i++) {
+            if (bottles[i].length > 0) {
+                for (let j = 0; j < bottles[i].length; j++) {
+                    delete(bottles[i][j]);
+                }
+            }
+        }
+    }
     bottles = [];
-    maxSlots = numSlots;
 
     let startX = 48;
     let sizeX = 74;
@@ -113,14 +106,14 @@ function initGame(numColors = 22, numSlots = 5) {
     }
 
     let startarr = [];
-    for (let i = 0; i < numColors; i++) {
-        for (let j = 0; j < numSlots; j++) {
+    for (let i = 0; i < maxColors; i++) {
+        for (let j = 0; j < maxSlots; j++) {
             startarr.push(i);
         }
     }
     shuffle(startarr);
 
-    for (let i = 0; i < numColors + 2; i++) {
+    for (let i = 0; i < maxColors + 2; i++) {
         bottles[i] = [];
 
         let cX = (i % countX);
@@ -128,8 +121,8 @@ function initGame(numColors = 22, numSlots = 5) {
         let pX = (startX + (cX * sizeX));
         let pY = (startY + (cY * sizeY));
 
-        for (let j = 0; j < numSlots; j++) {
-            if (i < numColors) {
+        for (let j = 0; j < maxSlots; j++) {
+            if (i < maxColors) {
                 let rX = Math.random() * srcCanvas.width;
                 let rY = Math.random() * srcCanvas.height;
                 let newBall = {
@@ -144,15 +137,13 @@ function initGame(numColors = 22, numSlots = 5) {
                     highlight: false,
                     myBottle: i,
                     t: 0,
+                    hidden: doHide,
                 };
                 bottles[i].push(newBall)
             }
         }
-        bottles[0][bottles[0].length - 1].highlight = true;
-        curBall = bottles[0][bottles[0].length - 1];
     }
-    resizeGame();
-    drawScreen();
+    revealHiddens();
 }
 
 function resetBallPositions() {
@@ -189,29 +180,49 @@ function update() {
     // Check for game over
     // Moves and stuff
     // Update position
+    let checkWin = true;
     for (let i = 0; i < bottles.length; i++) {
         for (let j = bottles[i].length - 1; j >= 0; j--) {
-            let bottle = bottles[i][j];
-            if (!bottle.atRest) {
-                if (bottle.curX == bottle.tgtX && bottle.curY == bottle.tgtY) {
-                    bottle.t = 0;
-                    bottle.atRest = true;
-                    bottle.curX = bottle.srcX = bottle.tgtX;
-                    bottle.curY = bottle.srcY = bottle.tgtY;
+            let ball = bottles[i][j];
+            if (!ball.atRest) {
+                checkWin = false;
+                if (ball.curX == ball.tgtX && ball.curY == ball.tgtY) {
+                    ball.t = 0;
+                    ball.atRest = true;
+                    ball.curX = ball.srcX = ball.tgtX;
+                    ball.curY = ball.srcY = ball.tgtY;
                     continue;
                 }
-                bottle.t += 0.05;
-                if (bottle.t > 1) {
-                    bottle.t = 0;
-                    bottle.atRest = true;
-                    bottle.curX = bottle.srcX = bottle.tgtX;
-                    bottle.curY = bottle.srcY = bottle.tgtY;
+                ball.t += 0.05;
+                if (ball.t > 1) {
+                    ball.t = 0;
+                    ball.atRest = true;
+                    ball.curX = ball.srcX = ball.tgtX;
+                    ball.curY = ball.srcY = ball.tgtY;
                 } else {
-                    bottle.curX = bez3(bottle.t, bottle.srcX, (bottle.tgtX + bottle.srcX) / 2, bottle.tgtX);
-                    bottle.curY = bez3(bottle.t, bottle.srcY, 0, bottle.tgtY);
+                    ball.curX = bez3(ball.t, ball.srcX, (ball.tgtX + ball.srcX) / 2, ball.tgtX);
+                    ball.curY = bez3(ball.t, ball.srcY, 0, ball.tgtY);
                 }
             }
         }
+    }
+    if (checkWin) {
+        for (let i = 0; i < bottles.length; i++) {
+            if (bottles[i].length == 0) { continue; } // Keep going if this bottle is empty
+            if (bottles[i].length != maxSlots) { return; } // Dump out unsuccessful if we have any partial bottles
+            // We have to have maxSlots here, make sure they are the same
+            for (let j = 0; j < maxSlots - 1; j++) { // Any adjacent two that don't match means we aren't solved
+                if (bottles[i][j].color != bottles[i][j + 1].color) return;
+            }
+        }
+        // No non-win conditions? Cool, we must have won!
+        modalUp = true;
+        MicroModal.show('win-modal', {
+            onClose: modal => {
+                modalUp = false;
+                initGame();
+            },
+        });
     }
 }
 
@@ -222,6 +233,7 @@ function bez3(t, x1, x2, x3) {
 
 //#region Mouse Handlers
 function handleMouse(e) {
+    if (modalUp) return; // Don't bother if something is currently up
     let mX = (e.offsetX - screenOffsetX) / gameScale;
     let mY = (e.offsetY - screenOffsetY) / gameScale;
 
@@ -239,15 +251,50 @@ function handleMouse(e) {
     }
 
     // Catch the hud case first
-    if (mX > (srcCanvas.width - 50) && mY > (srcCanvas.height - 50)) {
-        if (undoList.length > 0) {
-            let move = undoList.pop();
-            clearHighlight();
-            curBall = null;
-            makeMove(move[1], move[0]);
+    if (mX > (srcCanvas.width - 50)) {
+        if (mY > (srcCanvas.height - 50)) {
+            // Bottom Right is Undo
+            if (undoList.length > 0) {
+                let move = undoList.pop();
+                clearHighlight();
+                curBall = null;
+                makeMove(move[1], move[0]);
+                return;
+            }
+        } else if (mY < 50) {
+            // Top Right is About
+            modalUp = true;
+            MicroModal.show('info-modal', {
+                onClose: modal => { modalUp = false; }
+            });
+            return;
         }
-        return;
+    } else if (mX < 50) {
+        if (mY > (srcCanvas.height - 50)) {
+            initGame();
+        } else if (mY < 50) {
+            document.getElementById('colorsInput').value = maxColors;
+            document.getElementById('heightInput').value = maxSlots;
+            document.getElementById('hiddenInput').checked = doHide;
+            window.removeEventListener('click', handleMouse);
+            MicroModal.show('options-modal', {
+                onClose: modal => {
+                    modalUp = false;
+                    let newColors = parseInt(document.getElementById('colorsInput').value);
+                    let newSlots = parseInt(document.getElementById('heightInput').value);
+                    let newHide = document.getElementById('hiddenInput').checked;
+                    if ((newColors != maxColors) || (newSlots != maxSlots) || (newHide != doHide)) {
+                        maxColors = newColors;
+                        maxSlots = newSlots;
+                        doHide = newHide;
+                        initGame();
+                    }
+                    window.addEventListener('click', handleMouse);
+                },
+            });
+        }
     }
+
 
     if (mX < startX) { clearHighlight(); return; } // Too far left!
     if (mY < startY) { clearHighlight(); return; } // Too far up!
@@ -281,7 +328,7 @@ function handleMouse(e) {
     }
 }
 
-function KeyPress(e) {
+function handleKeys(e) {
     if (e.keyCode == 90 && e.ctrlKey) {
         if (undoList.length > 0) {
             let move = undoList.pop();
@@ -301,6 +348,17 @@ function makeMove(srcB, tgtB) {
     ball.highlight = false;
     bottles[tgtB].push(ball);
     resetBallPositions();
+    revealHiddens();
+    saveGame();
+}
+
+function revealHiddens() {
+    if (!doHide) { return; }
+    for (let i = 0; i < bottles.length; i++) {
+        if (bottles[i].length > 0) {
+            bottles[i][bottles[i].length - 1].hidden = false;
+        }
+    }
 }
 
 function isValidMove(bNum) {
@@ -332,7 +390,7 @@ function drawScreen() {
     update();
 
     // Clear the little canvas
-    ctx.fillStyle = '#234567';
+    ctx.fillStyle = bgcolor;
     ctx.fillRect(0, 0, 960, 960);
 
     // Draw the game elements
@@ -349,7 +407,12 @@ function drawScreen() {
 }
 
 function drawUI() {
-    ctx.fillText('↩️', srcCanvas.width - 25, srcCanvas.height - 25);
+    ctx.fillText('⚙️', 25, 25);
+    ctx.fillText('📔', srcCanvas.width - 25, 25);
+    ctx.fillText('🔄', 25, srcCanvas.height - 25);
+    if (undoList.length > 0) {
+        ctx.fillText('↩️', srcCanvas.width - 25, srcCanvas.height - 25);
+    }
 }
 
 function drawBottles() {
@@ -383,13 +446,20 @@ function drawBottles() {
         for (let j = bottles[i].length - 1; j >= 0; j--) {
             let bottle = bottles[i][j];
             if (bottle.color > -1) {
-                ctx.fillText(EMOJILIST[bottle.color], bottle.curX, bottle.curY);
-                if (bottle.highlight) {
-                    ctx.font = '48px serif';
-                    ctx.globalAlpha = 0.33;
-                    ctx.fillText('🟡', bottle.curX, bottle.curY);
+                if (bottle.hidden) {
+                    ctx.fillText('⚪', bottle.curX, bottle.curY);
+                    ctx.font = '24px serif';
+                    ctx.fillText('❓', bottle.curX, bottle.curY);
                     ctx.font = '32px serif';
-                    ctx.globalAlpha = 1;
+                } else {
+                    ctx.fillText(EMOJILIST[bottle.color], bottle.curX, bottle.curY);
+                    if (bottle.highlight) {
+                        ctx.font = '48px serif';
+                        ctx.globalAlpha = 0.33;
+                        ctx.fillText('🟡', bottle.curX, bottle.curY);
+                        ctx.font = '32px serif';
+                        ctx.globalAlpha = 1;
+                    }
                 }
             }
         }

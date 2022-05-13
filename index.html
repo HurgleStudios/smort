@@ -5,12 +5,102 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
     <title>Smort</title>
 </head>
 
 <body style="margin: 0px !important;overflow:hidden;">
-    <canvas id="canvas" width="1920" height="1080"></canvas>
-    <script src="main.js"></script>
+    <div id="canvas-wrap" style="width: 100vw; height: 100vh; margin: 0px !important;overflow:hidden;">
+        <canvas id="canvas" width="1920" height="1080"></canvas>
+        <div id="overlay">
+
+            <div class="modal micromodal-slide" id="info-modal" aria-hidden="true">
+                <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+                    <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
+                        <header class="modal__header">
+                            <h2 class="modal__title" id="info-modal-title">
+                                About SMORT
+                            </h2>
+                            <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+                        </header>
+                        <main class="modal__content" id="info-modal-content">
+                            <p>
+                                SMORT is an emoji based sorting game. Tap / click on a vial to select the top item, and tap another vial to move it. You can only stack objects either in empty vials, or on top of the same type of object. The object is to sort the objects, such that each
+                                vial is either empty, or full of the same type of object. The "New Game" button at the bottom left will start a new game, and the "Undo" button at the bottom right will undo the previous move.
+                            </p>
+                            <hr>
+                            <p>
+                                In the Options menu (click the gear), you can change the height of the vials, the number of different objects, and whether all the objects are visible, or are hidden until exposed to the top. (You'll see.)
+                            </p>
+                            <hr>
+                            <p>
+                                Many thanks to my awesome
+                                <a href="https://patreon.com/jartis">Patrons</a> for their support in putting this together:
+                                <ul>
+                                    <li>Joseph Maxwell</li>
+                                    <li>M</li>
+                                    <li>C. 'Uberfuzzy.ninja' Stafford</li>
+                                    <li>DowntownCrowd</li>
+                                    <li>Kevin Cooney</li>
+                                </ul>
+                            </p>
+                            <p>Follow my other projects at <a href="https://jartis.dev">jartis.dev</a></p>
+                            <hr> 🦥💘🐸
+                        </main>
+                        <footer class="modal__footer ">
+                            <button data-micromodal-close class="modal__btn modal__btn-primary ">OK</button>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal micromodal-slide" id="win-modal" aria-hidden="true">
+                <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+                    <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="win-modal-title">
+                        <main class="modal__content" id="win-modal-content">
+                            <h2 class="modal__title" style="text-align: center;" id="win-modal-title">
+                                YOU WIN!
+                            </h2>
+                            <p style="text-align: center;">Excellent job!</p>
+                        </main>
+                        <footer class="modal__footer " style="text-align: center;">
+                            <button data-micromodal-close onclick="doNewGame" class="modal__btn modal__btn-primary ">New Game</button>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal micromodal-slide" id="options-modal" aria-hidden="true">
+                <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+                    <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="options-modal-title">
+                        <header class="modal__header">
+                            <h2 class="modal__title" id="options-modal-title">
+                                Options
+                            </h2>
+                            <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+                        </header>
+                        <main class="modal__content" id="options-modal-content">
+                            <input type="number" id="colorsInput" name="colorsInput" min="3" max="22">
+                            <label for="colorsInput"> Number of different objects</label><br>
+                            <input type="number" id="heightInput" name="heightInput" min="2" max="5">
+                            <label for="heightInput"> Height of vials (in objects)</label><br>
+                            <input type="checkbox" id="hiddenInput" name="hiddenInput">
+                            <label for="hiddenInput"> Hide lower objects</label><br>
+                        </main>
+                        <footer class="modal__footer ">
+                            <button data-micromodal-close class="modal__btn modal__btn-primary ">OK</button>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+    <script src="main.js "></script>
+    <script src="https://unpkg.com/micromodal/dist/micromodal.min.js "></script>
 </body>
 
 </html>
