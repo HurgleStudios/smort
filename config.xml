@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.hurgle.smort" version="1.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Smort</name>
+    <description>Smort</description>
+    <author email="jartis@hurgle.com" href="http://hurgle.com">
+        Hurgle Studios
+    </author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <icon src="icon_512.png" />
+    <platform name="android">
+        <preference name="signed_bundle_keystore_path" value="./smort.keystore" />
+        <preference name="signed_bundle_keystore_alias" value="smort" />
+    </platform>
+</widget>
